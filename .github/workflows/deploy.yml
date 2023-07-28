@@ -1,0 +1,36 @@
+name: Build and test
+
+on:
+  push:
+    branches-ignore:
+      - unknown
+  pull_request: {}
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  build:
+    name: Build and test
+    runs-on: ubuntu-latest
+    concurrency: build-test-${{ github.ref }}
+    steps:
+    - name: 'Checkout code'
+      uses: actions/checkout@v3
+      
+    - name: Build for debug
+      run: cargo build --verbose
+      
+    - name: Test
+      run: cargo test --verbose
+
+    - name: Create database
+      run: cargo run -- clear-db
+
+    - name: Generate random data
+      run: cargo run -- generate-data
+
+    - name: Build for PROD
+      if: ${{ (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev') && github.event_name == 'push' }}
+      run: cargo build --release --verbose
