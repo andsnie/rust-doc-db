@@ -10,7 +10,7 @@ use sqlite::State;
 use ulid::Ulid;
 
 use super::{model::DocDbEntry, DbConfig, DocDbResult};
-use crate::doc_db::{errors::DocDbError, DocDbError::SqlStorageError};
+use crate::doc_db::{errors::DocDbError, DocDbError::SqlStorage};
 
 pub fn get_sqlite_connection(db_full_filename: &str) -> Result<sqlite::Connection, sqlite::Error> {
     sqlite::open(db_full_filename)
@@ -27,7 +27,7 @@ pub fn create_sqlite_db_if_not_exists(db_config: &DbConfig) -> DocDbResult<bool>
 
     let mut sqlite_db_path = PathBuf::from(&db_config.sqlite_db_full_filename);
     sqlite_db_path.pop();
-    fs::create_dir_all(sqlite_db_path.to_str().ok_or(DocDbError::InternalError {
+    fs::create_dir_all(sqlite_db_path.to_str().ok_or(DocDbError::Internal {
         message: format!(
             "Unable to process DB path {}",
             db_config.sqlite_db_full_filename
@@ -56,7 +56,7 @@ pub fn get_entry_from_sqlite(entity_id: &Ulid, db_config: &DbConfig) -> DocDbRes
         };
         return Ok(entry);
     }
-    Err(SqlStorageError {
+    Err(SqlStorage {
         message: format!("Entity {} not found", entity_id.to_string()),
         inner_type_name: "?".to_string(), // TODO:
     })

@@ -80,7 +80,7 @@ fn try_merge_entity_with_existing_version(
 }
 
 fn merge_entities(parent_entity: &Value, new_entity: &mut Value) -> Result<(), DocDbError> {
-    for (key, value) in parent_entity.as_object().ok_or(DocDbError::InternalError {
+    for (key, value) in parent_entity.as_object().ok_or(DocDbError::Internal {
         message: "Unable to parse parent entity as object".to_string(),
         inner_type_name: "".to_string(),
     })? {
@@ -105,9 +105,8 @@ pub fn set_entity_field_value(
     );
 
     let mut db_entry = get_entry_from_db(entity_id, db_config)?;
-    db_entry.set_field_value(field_name, Value::String(field_value.to_string()));
+    db_entry.set_field_value(field_name, Value::String(field_value.to_string()))?;
     update_entity_in_db(entity_id, &db_entry.entity, db_config)?;
-
     Ok(())
 }
 
@@ -117,12 +116,12 @@ pub fn tag_entity(entity_id: &Ulid, tag: &str, db_config: &DbConfig) -> DocDbRes
     let mut db_entry = get_entry_from_db(entity_id, db_config)?;
     if !db_entry.has_field("tags")? {
         log::info!("Creating tags field to store tags for entity {}", entity_id);
-        db_entry.set_field_value("tags", Value::Array(Vec::new()));
+        let _ = db_entry.set_field_value("tags", Value::Array(Vec::new()));
     }
 
     let json_tags_option = db_entry.entity.get_mut("tags");
     let tags_array_option = json_tags_option
-        .ok_or(DocDbError::InternalError {
+        .ok_or(DocDbError::Internal {
             message: "Unable to extract tags array".to_string(),
             inner_type_name: "?".to_string(),
         })?
@@ -150,7 +149,7 @@ pub fn untag_entity(entity_id: &Ulid, tag: &str, db_config: &DbConfig) -> DocDbR
 
     let json_tags_option = db_entry.entity.get_mut("tags");
     let tags_array_option = json_tags_option
-        .ok_or(DocDbError::InternalError {
+        .ok_or(DocDbError::Internal {
             message: "Unable to extract tags array".to_string(),
             inner_type_name: "?".to_string(),
         })?
@@ -206,7 +205,7 @@ mod tests {
             "firstname": "Mark",
             "lastname": "Smith",
         });
-        merge_entities(&old_entity, &mut new_entity);
+        let _ = merge_entities(&old_entity, &mut new_entity);
         let expected_entity = json!({
                 "firstname": "Mark",
                 "lastname": "Smith",

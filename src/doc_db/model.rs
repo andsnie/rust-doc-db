@@ -13,7 +13,7 @@ impl DocDbEntry {
     pub fn set_field_value(&mut self, field_name: &str, field_value: Value) -> DocDbResult<()> {
         self.entity
             .as_object_mut()
-            .ok_or(DocDbError::InternalError {
+            .ok_or(DocDbError::Internal {
                 message: "Unable to extract tags array".to_string(),
                 inner_type_name: "?".to_string(),
             })?
@@ -25,7 +25,7 @@ impl DocDbEntry {
         let result = self
             .entity
             .as_object()
-            .ok_or(DocDbError::InternalError {
+            .ok_or(DocDbError::Internal {
                 message: "Unable to extract tags array".to_string(),
                 inner_type_name: "?".to_string(),
             })?
