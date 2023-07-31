@@ -10,7 +10,7 @@ use sqlite::State;
 use ulid::Ulid;
 
 use super::{model::DocDbEntry, DbConfig, DocDbResult};
-use crate::doc_db::{errors::DocDbError, DocDbError::SqlStorage};
+use crate::doc_db::{errors::DocDbError};
 
 pub fn get_sqlite_connection(db_full_filename: &str) -> Result<sqlite::Connection, sqlite::Error> {
     sqlite::open(db_full_filename)
@@ -42,7 +42,10 @@ pub fn create_sqlite_db_if_not_exists(db_config: &DbConfig) -> DocDbResult<bool>
     Ok(true)
 }
 
-pub fn get_entry_from_sqlite(entity_id: &Ulid, db_config: &DbConfig) -> DocDbResult<DocDbEntry> {
+pub fn get_entry_from_sqlite(
+    entity_id: &Ulid,
+    db_config: &DbConfig,
+) -> DocDbResult<Option<DocDbEntry>> {
     log::info!("Obtaining entity {} from SQLite", entity_id);
     let connection = get_sqlite_connection(&db_config.sqlite_db_full_filename)?;
 
@@ -54,12 +57,9 @@ pub fn get_entry_from_sqlite(entity_id: &Ulid, db_config: &DbConfig) -> DocDbRes
             id: *entity_id,
             entity: serde_json::from_str(raw_json.as_str())?,
         };
-        return Ok(entry);
+        return Ok(Some(entry));
     }
-    Err(SqlStorage {
-        message: format!("Entity {} not found", entity_id.to_string()),
-        inner_type_name: "?".to_string(), // TODO:
-    })
+    Ok(None)
 }
 
 pub fn insert_entity_to_sqlite(

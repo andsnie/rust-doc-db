@@ -26,12 +26,12 @@ fn admin_can_tag_untag_entities() {
     mark_entity_as_important(&entity_id, &db_config).unwrap();
 
     let db_entry_1 = get_entry_from_db(&entity_id, &db_config).unwrap();
-    let entity_as_meta_1: EntityMeta = serde_json::from_value(db_entry_1.entity).unwrap();
+    let entity_as_meta_1: EntityMeta = serde_json::from_value(db_entry_1.unwrap().entity).unwrap();
     assert!(entity_as_meta_1.tags.contains(&"important".to_string()));
 
     unmark_entity_as_important(&entity_id, &db_config).unwrap();
 
     let db_entry_2 = get_entry_from_db(&entity_id, &db_config).unwrap();
-    let entity_as_meta_2: EntityMeta = serde_json::from_value(db_entry_2.entity).unwrap();
+    let entity_as_meta_2: EntityMeta = serde_json::from_value(db_entry_2.unwrap().entity).unwrap();
     assert!(!entity_as_meta_2.tags.contains(&"important".to_string()));
 }

@@ -33,7 +33,10 @@ pub fn insert_entity_to_db(entity: &serde_json::Value, db_config: &DbConfig) -> 
     Ok(ulid)
 }
 
-pub fn get_entry_from_db(&entity_id: &Ulid, db_config: &DbConfig) -> DocDbResult<DocDbEntry> {
+pub fn get_entry_from_db(
+    &entity_id: &Ulid,
+    db_config: &DbConfig,
+) -> DocDbResult<Option<DocDbEntry>> {
     log::info!("Obtaining entity {} from DB", entity_id);
     get_entry_from_sqlite(&entity_id, db_config)
 }
@@ -70,9 +73,9 @@ fn try_merge_entity_with_existing_version(
     db_config: &DbConfig,
 ) -> DocDbResult<serde_json::Value> {
     let mut merged_entity = entity.clone();
-    let existing_entity = get_entry_from_sqlite(entity_id, db_config);
-    if let Ok(e) = existing_entity {
-        merge_entities(&e.entity, &mut merged_entity)?;
+    let db_entry_option = get_entry_from_sqlite(entity_id, db_config)?;
+    if let Some(db_entry) = db_entry_option {
+        merge_entities(&db_entry.entity, &mut merged_entity)?;
     } else {
         log::warn!("Unable to obtain entity {} for merging", &entity_id);
     }
@@ -104,7 +107,17 @@ pub fn set_entity_field_value(
         entity_id
     );
 
-    let mut db_entry = get_entry_from_db(entity_id, db_config)?;
+    let db_entry_option = get_entry_from_db(entity_id, db_config)?;
+    if db_entry_option.is_none() {
+        return Err(DocDbError::SqlStorage {
+            message: format!(
+                "Unable to set entity {} field {} to {}",
+                entity_id, field_name, field_value
+            ),
+            inner_type_name: "?".to_string(),
+        });
+    }
+    let mut db_entry = db_entry_option.unwrap();
     db_entry.set_field_value(field_name, Value::String(field_value.to_string()))?;
     update_entity_in_db(entity_id, &db_entry.entity, db_config)?;
     Ok(())
@@ -113,7 +126,15 @@ pub fn set_entity_field_value(
 pub fn tag_entity(entity_id: &Ulid, tag: &str, db_config: &DbConfig) -> DocDbResult<()> {
     log::info!("Adding \"{}\" tag for entity {}", tag, entity_id);
 
-    let mut db_entry = get_entry_from_db(entity_id, db_config)?;
+    let db_entry_option = get_entry_from_db(entity_id, db_config)?;
+    if db_entry_option.is_none() {
+        return Err(DocDbError::SqlStorage {
+            message: format!("Unable to tag entity {}", entity_id),
+            inner_type_name: "?".to_string(),
+        });
+    }
+    let mut db_entry = db_entry_option.unwrap();
+
     if !db_entry.has_field("tags")? {
         log::info!("Creating tags field to store tags for entity {}", entity_id);
         let _ = db_entry.set_field_value("tags", Value::Array(Vec::new()));
@@ -142,7 +163,15 @@ pub fn tag_entity(entity_id: &Ulid, tag: &str, db_config: &DbConfig) -> DocDbRes
 pub fn untag_entity(entity_id: &Ulid, tag: &str, db_config: &DbConfig) -> DocDbResult<()> {
     log::info!("Removing \"{}\" tag for entity {}", tag, entity_id);
 
-    let mut db_entry = get_entry_from_db(entity_id, db_config)?;
+    let db_entry_option = get_entry_from_db(entity_id, db_config)?;
+    if db_entry_option.is_none() {
+        return Err(DocDbError::SqlStorage {
+            message: format!("Unable to untag entity {}", entity_id),
+            inner_type_name: "?".to_string(),
+        });
+    }
+    let mut db_entry = db_entry_option.unwrap();
+
     if !db_entry.has_field("tags")? {
         return Ok(());
     }
