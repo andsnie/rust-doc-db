@@ -18,7 +18,7 @@ pub fn get_phones_of_people_by_firstname(
     let entities = get_entries_from_db(
         "json_extract(content, '$.firstname') = :firstname",
         where_clause_params,
-        &db_config,
+        db_config,
     )?;
 
     let mut phones: Vec<String> = Vec::new();
@@ -30,5 +30,5 @@ pub fn get_phones_of_people_by_firstname(
             }
         }
     }
-    return Ok(phones);
+    Ok(phones)
 }

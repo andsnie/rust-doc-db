@@ -11,10 +11,10 @@ mod doc_db;
 mod example_domains;
 
 fn get_prod_db_config() -> DbConfig {
-    return DbConfig {
+    DbConfig {
         sqlite_db_full_filename: config::SQLITE_DB_FULL_FILENAME.to_string(),
         text_db_path: config::YAML_FILES_ROOT_PATH.to_string(),
-    };
+    }
 }
 
 fn main() -> Result<()> {
@@ -64,5 +64,5 @@ fn main() -> Result<()> {
         }
         None => {}
     }
-    return Ok(());
+    Ok(())
 }

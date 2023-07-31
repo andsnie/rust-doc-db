@@ -15,7 +15,7 @@ pub fn create_text_db_if_not_exists(db_config: &DbConfig) -> DocDbResult<()> {
     }
     log::info!("Creating text DB in {}", db_config.text_db_path);
     fs::create_dir_all(&db_config.text_db_path)?;
-    return Ok(());
+    Ok(())
 }
 
 pub fn store_entity_in_yaml_file(
@@ -28,14 +28,14 @@ pub fn store_entity_in_yaml_file(
     log::info!("Saving entity {} text DB as {}", entity_id, filename);
     let mut file = File::create(filename)?;
     file.write_all(yaml_str.as_bytes())?;
-    return Ok(());
+    Ok(())
 }
 
 pub fn delete_yaml_file(entity_id: &Ulid, db_config: &DbConfig) -> DocDbResult<()> {
     let filename = format!("{}{}.yaml", db_config.text_db_path, entity_id.to_string());
     log::info!("Removing entity {} from text DB in {}", entity_id, filename);
     fs::remove_file(&filename)?;
-    return Ok(());
+    Ok(())
 }
 
 pub fn remove_all_entity_yaml_files(db_config: &DbConfig) -> DocDbResult<()> {
@@ -49,5 +49,5 @@ pub fn remove_all_entity_yaml_files(db_config: &DbConfig) -> DocDbResult<()> {
         log::debug!("Removing entity {}", filename.display());
         fs::remove_file(filename)?;
     }
-    return Ok(());
+    Ok(())
 }

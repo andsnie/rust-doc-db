@@ -25,7 +25,7 @@ fn top_level_fields_are_preserved_across_domains() {
     let entity_id = insert_entity_to_db(&json_person, &db_config).unwrap();
     mark_entity_as_important(&entity_id, &db_config).unwrap();
 
-    let db_entry = get_entry_from_db(&entity_id, &db_config).unwrap();
+    let db_entry = get_entry_from_db(&entity_id, &db_config).unwrap().unwrap();
     let tags_from_db = db_entry
         .entity
         .get("tags")

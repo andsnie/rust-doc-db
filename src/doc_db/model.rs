@@ -13,23 +13,23 @@ impl DocDbEntry {
     pub fn set_field_value(&mut self, field_name: &str, field_value: Value) -> DocDbResult<()> {
         self.entity
             .as_object_mut()
-            .ok_or(DocDbError::InternalError {
+            .ok_or(DocDbError::Internal {
                 message: "Unable to extract tags array".to_string(),
                 inner_type_name: "?".to_string(),
             })?
             .insert(field_name.to_string(), field_value);
-        return Ok(());
+        Ok(())
     }
 
     pub fn has_field(&self, field_name: &str) -> DocDbResult<bool> {
         let result = self
             .entity
             .as_object()
-            .ok_or(DocDbError::InternalError {
+            .ok_or(DocDbError::Internal {
                 message: "Unable to extract tags array".to_string(),
                 inner_type_name: "?".to_string(),
             })?
             .contains_key(field_name);
-        return Ok(result);
+        Ok(result)
     }
 }

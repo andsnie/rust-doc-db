@@ -36,43 +36,41 @@ static STREETS: [&str; 6] = [
 
 fn get_random_person() -> Person {
     let mut rng = rand::thread_rng();
-    return Person {
+    Person {
         firstname: FIRSTNAMES[rng.gen_range(0..FIRSTNAMES.len())].to_string(),
         lastname: LASTNAMES[rng.gen_range(0..LASTNAMES.len())].to_string(),
         addresses: std::ops::Range {
             start: 0,
             end: rng.gen_range(1..2),
         }
-        .into_iter()
         .map(|_| get_random_address())
         .collect(),
         phones: std::ops::Range {
             start: 0,
             end: rng.gen_range(1..2),
         }
-        .into_iter()
         .map(|_| get_random_phone_number())
         .collect(),
-    };
+    }
 }
 
 fn get_random_address() -> Address {
     let mut rng = rand::thread_rng();
-    return Address {
+    Address {
         street: STREETS[rng.gen_range(0..STREETS.len())].to_string(),
         home_number: rng.gen_range(1..100),
         flat_number: rng.gen_range(1..30),
-    };
+    }
 }
 
 fn get_random_phone_number() -> String {
     let mut rng = rand::thread_rng();
-    return format!(
+    format!(
         "+48 {}-{:0>3}-{:0>3}",
         rng.gen_range(100..999),
         rng.gen_range(0..999),
         rng.gen_range(0..999)
-    );
+    )
 }
 
 pub fn generate_people(count: u32) -> Vec<Person> {
@@ -81,7 +79,7 @@ pub fn generate_people(count: u32) -> Vec<Person> {
     for _ in 0..count {
         people.push(get_random_person())
     }
-    return people;
+    people
 }
 
 #[cfg(test)]
@@ -97,13 +95,13 @@ mod tests {
         for person in people {
             assert!(FIRSTNAMES.contains(&person.firstname.as_str()));
             assert!(LASTNAMES.contains(&person.lastname.as_str()));
-            assert!(&person.addresses.len() > &0);
+            assert!(!person.addresses.is_empty());
             for address in person.addresses {
                 assert!(STREETS.contains(&address.street.as_str()));
                 assert!(address.home_number > 0);
                 assert!(address.flat_number > 0);
             }
-            assert!(&person.phones.len() > &0);
+            assert!(!person.phones.is_empty());
             for phone in person.phones {
                 assert_eq!(phone.len(), 15);
             }
