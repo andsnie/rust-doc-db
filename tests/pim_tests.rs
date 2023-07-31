@@ -15,25 +15,26 @@ fn can_query_phones_by_name() {
     setup_test();
     let db_config = get_test_config();
 
-    let mut people = Vec::new();
-    people.push(Person {
-        firstname: "Piotr".to_string(),
-        lastname: "Nowak".to_string(),
-        phones: vec!["+48 123 456 789".to_string(), "+48 789 123 456".to_string()],
-        addresses: Vec::new(),
-    });
-    people.push(Person {
-        firstname: "Tomasz".to_string(),
-        lastname: "Zawadzki".to_string(),
-        phones: vec!["+48 123 333 444".to_string()],
-        addresses: Vec::new(),
-    });
-    people.push(Person {
-        firstname: "Piotr".to_string(),
-        lastname: "Malinowski".to_string(),
-        phones: vec!["+48 345 345 345".to_string()],
-        addresses: Vec::new(),
-    });
+    let people = vec![
+        Person {
+            firstname: "Piotr".to_string(),
+            lastname: "Nowak".to_string(),
+            phones: vec!["+48 123 456 789".to_string(), "+48 789 123 456".to_string()],
+            addresses: Vec::new(),
+        },
+        Person {
+            firstname: "Tomasz".to_string(),
+            lastname: "Zawadzki".to_string(),
+            phones: vec!["+48 123 333 444".to_string()],
+            addresses: Vec::new(),
+        },
+        Person {
+            firstname: "Piotr".to_string(),
+            lastname: "Malinowski".to_string(),
+            phones: vec!["+48 345 345 345".to_string()],
+            addresses: Vec::new(),
+        },
+    ];
 
     let mut people_ids: Vec<Ulid> = Vec::new();
     for person in people {

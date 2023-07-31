@@ -1,6 +1,6 @@
 #![allow(dead_code)] // HACK: any more sensible workaround for linting strictness ?
 
-use std::{collections::HashMap, f32::consts::E};
+use std::collections::HashMap;
 
 use self::{errors::DocDbError, file_storage::*, model::DocDbEntry, sql_storage::*};
 use serde_json::Value;
@@ -21,21 +21,21 @@ pub type DocDbResult<T> = std::result::Result<T, DocDbError>;
 
 pub fn make_sure_db_exists(db_config: &DbConfig) -> DocDbResult<()> {
     log::info!("Checking if DB exists");
-    create_sqlite_db_if_not_exists(&db_config)?;
-    create_text_db_if_not_exists(&db_config)?;
-    return Ok(());
+    create_sqlite_db_if_not_exists(db_config)?;
+    create_text_db_if_not_exists(db_config)?;
+    Ok(())
 }
 
 pub fn insert_entity_to_db(entity: &serde_json::Value, db_config: &DbConfig) -> DocDbResult<Ulid> {
     log::info!("Adding entity to DB");
-    let ulid = insert_entity_to_sqlite(&entity, &db_config)?;
-    store_entity_in_yaml_file(&ulid, &entity, &db_config)?;
-    return Ok(ulid);
+    let ulid = insert_entity_to_sqlite(entity, db_config)?;
+    store_entity_in_yaml_file(&ulid, entity, db_config)?;
+    Ok(ulid)
 }
 
 pub fn get_entry_from_db(&entity_id: &Ulid, db_config: &DbConfig) -> DocDbResult<DocDbEntry> {
     log::info!("Obtaining entity {} from DB", entity_id);
-    return get_entry_from_sqlite(&entity_id, &db_config);
+    get_entry_from_sqlite(&entity_id, db_config)
 }
 
 pub fn update_entity_in_db(
@@ -44,24 +44,24 @@ pub fn update_entity_in_db(
     db_config: &DbConfig,
 ) -> DocDbResult<()> {
     log::info!("Updating entity {} in DB", entity_id);
-    let merged_entity = try_merge_entity_with_existing_version(&entity, entity_id, &db_config)?;
-    update_entity_in_sqlite(&entity_id, &merged_entity, &db_config)?;
-    store_entity_in_yaml_file(&entity_id, &merged_entity, &db_config)?;
-    return Ok(());
+    let merged_entity = try_merge_entity_with_existing_version(entity, entity_id, db_config)?;
+    update_entity_in_sqlite(entity_id, &merged_entity, db_config)?;
+    store_entity_in_yaml_file(entity_id, &merged_entity, db_config)?;
+    Ok(())
 }
 
 pub fn delete_entity_from_db(entity_id: &Ulid, db_config: &DbConfig) -> DocDbResult<()> {
     log::info!("Deleting entity {} from DB", entity_id);
-    delete_entity_from_sqlite(entity_id, &db_config)?;
-    delete_yaml_file(&entity_id, &db_config)?;
-    return Ok(());
+    delete_entity_from_sqlite(entity_id, db_config)?;
+    delete_yaml_file(entity_id, db_config)?;
+    Ok(())
 }
 
 pub fn clear_db(db_config: &DbConfig) -> DocDbResult<()> {
     log::info!("Clearing DB");
-    remove_all_entity_yaml_files(&db_config)?;
-    remove_all_entities_from_sqlite(&db_config)?;
-    return Ok(());
+    remove_all_entity_yaml_files(db_config)?;
+    remove_all_entities_from_sqlite(db_config)?;
+    Ok(())
 }
 
 fn try_merge_entity_with_existing_version(
@@ -70,13 +70,13 @@ fn try_merge_entity_with_existing_version(
     db_config: &DbConfig,
 ) -> DocDbResult<serde_json::Value> {
     let mut merged_entity = entity.clone();
-    let existing_entity = get_entry_from_sqlite(&entity_id, &db_config);
+    let existing_entity = get_entry_from_sqlite(entity_id, db_config);
     if let Ok(e) = existing_entity {
         merge_entities(&e.entity, &mut merged_entity)?;
     } else {
         log::warn!("Unable to obtain entity {} for merging", &entity_id);
     }
-    return Ok(merged_entity);
+    Ok(merged_entity)
 }
 
 fn merge_entities(parent_entity: &Value, new_entity: &mut Value) -> Result<(), DocDbError> {
@@ -88,7 +88,7 @@ fn merge_entities(parent_entity: &Value, new_entity: &mut Value) -> Result<(), D
             new_entity[key] = value.clone();
         }
     }
-    return Ok(());
+    Ok(())
 }
 
 pub fn set_entity_field_value(
@@ -104,17 +104,17 @@ pub fn set_entity_field_value(
         entity_id
     );
 
-    let mut db_entry = get_entry_from_db(entity_id, &db_config)?;
+    let mut db_entry = get_entry_from_db(entity_id, db_config)?;
     db_entry.set_field_value(field_name, Value::String(field_value.to_string()));
-    update_entity_in_db(entity_id, &db_entry.entity, &db_config)?;
+    update_entity_in_db(entity_id, &db_entry.entity, db_config)?;
 
-    return Ok(());
+    Ok(())
 }
 
 pub fn tag_entity(entity_id: &Ulid, tag: &str, db_config: &DbConfig) -> DocDbResult<()> {
     log::info!("Adding \"{}\" tag for entity {}", tag, entity_id);
 
-    let mut db_entry = get_entry_from_db(entity_id, &db_config)?;
+    let mut db_entry = get_entry_from_db(entity_id, db_config)?;
     if !db_entry.has_field("tags")? {
         log::info!("Creating tags field to store tags for entity {}", entity_id);
         db_entry.set_field_value("tags", Value::Array(Vec::new()));
@@ -132,18 +132,18 @@ pub fn tag_entity(entity_id: &Ulid, tag: &str, db_config: &DbConfig) -> DocDbRes
         let tag_as_value = Value::String(String::from(tag));
         if !tags_array.contains(&tag_as_value) {
             tags_array.push(tag_as_value);
-            update_entity_in_db(entity_id, &db_entry.entity, &db_config)?;
+            update_entity_in_db(entity_id, &db_entry.entity, db_config)?;
         } else {
             log::info!("Tag {} already set for entity {}", tag, entity_id);
         }
     }
-    return Ok(());
+    Ok(())
 }
 
 pub fn untag_entity(entity_id: &Ulid, tag: &str, db_config: &DbConfig) -> DocDbResult<()> {
     log::info!("Removing \"{}\" tag for entity {}", tag, entity_id);
 
-    let mut db_entry = get_entry_from_db(entity_id, &db_config)?;
+    let mut db_entry = get_entry_from_db(entity_id, db_config)?;
     if !db_entry.has_field("tags")? {
         return Ok(());
     }
@@ -157,17 +157,17 @@ pub fn untag_entity(entity_id: &Ulid, tag: &str, db_config: &DbConfig) -> DocDbR
         .as_array_mut();
 
     if let Some(json_tags_array) = tags_array_option {
-        let tags_array = json_array_to_array(&json_tags_array);
+        let tags_array = json_array_to_array(json_tags_array);
         // let tag_as_value = Value::String(String::from(tag));
         if tags_array.contains(&tag) {
             let index_result = tags_array.iter().position(|x| *x == tag);
             if let Some(index) = index_result {
                 json_tags_array.remove(index);
-                update_entity_in_db(entity_id, &db_entry.entity, &db_config)?;
+                update_entity_in_db(entity_id, &db_entry.entity, db_config)?;
             }
         }
     }
-    return Ok(());
+    Ok(())
 }
 
 fn json_array_to_array(json_array: &Vec<Value>) -> Vec<&str> {
@@ -177,7 +177,7 @@ fn json_array_to_array(json_array: &Vec<Value>) -> Vec<&str> {
             strings.push(s);
         }
     }
-    return strings;
+    strings
 }
 
 pub fn get_entries_from_db(
@@ -186,7 +186,7 @@ pub fn get_entries_from_db(
     db_config: &DbConfig,
 ) -> DocDbResult<Vec<DocDbEntry>> {
     log::info!("Querying DB: {}", where_clause);
-    return get_entries_from_sqlite(&where_clause, where_clause_params, &db_config);
+    get_entries_from_sqlite(where_clause, where_clause_params, db_config)
 }
 
 #[cfg(test)]

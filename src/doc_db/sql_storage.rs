@@ -13,7 +13,7 @@ use super::{model::DocDbEntry, DbConfig, DocDbResult};
 use crate::doc_db::{errors::DocDbError, DocDbError::SqlStorageError};
 
 pub fn get_sqlite_connection(db_full_filename: &str) -> Result<sqlite::Connection, sqlite::Error> {
-    return sqlite::open(db_full_filename);
+    sqlite::open(db_full_filename)
 }
 
 pub fn create_sqlite_db_if_not_exists(db_config: &DbConfig) -> DocDbResult<bool> {
@@ -27,7 +27,7 @@ pub fn create_sqlite_db_if_not_exists(db_config: &DbConfig) -> DocDbResult<bool>
 
     let mut sqlite_db_path = PathBuf::from(&db_config.sqlite_db_full_filename);
     sqlite_db_path.pop();
-    fs::create_dir_all(&sqlite_db_path.to_str().ok_or(DocDbError::InternalError {
+    fs::create_dir_all(sqlite_db_path.to_str().ok_or(DocDbError::InternalError {
         message: format!(
             "Unable to process DB path {}",
             db_config.sqlite_db_full_filename
@@ -39,7 +39,7 @@ pub fn create_sqlite_db_if_not_exists(db_config: &DbConfig) -> DocDbResult<bool>
     let mut statement = connection
     .prepare("CREATE TABLE `entities` ( `id` TEXT NOT NULL UNIQUE, `content` TEXT NOT NULL, PRIMARY KEY(`id`) )")?;
     statement.next()?;
-    return Ok(true);
+    Ok(true)
 }
 
 pub fn get_entry_from_sqlite(entity_id: &Ulid, db_config: &DbConfig) -> DocDbResult<DocDbEntry> {
@@ -48,7 +48,7 @@ pub fn get_entry_from_sqlite(entity_id: &Ulid, db_config: &DbConfig) -> DocDbRes
 
     let mut statement = connection.prepare("SELECT content FROM entities WHERE id=:id")?;
     statement.bind((1, entity_id.to_string().as_str()))?;
-    while let Ok(State::Row) = statement.next() {
+    if let Ok(State::Row) = statement.next() {
         let raw_json = statement.read::<String, _>(0).unwrap();
         let entry = DocDbEntry {
             id: *entity_id,
@@ -56,10 +56,10 @@ pub fn get_entry_from_sqlite(entity_id: &Ulid, db_config: &DbConfig) -> DocDbRes
         };
         return Ok(entry);
     }
-    return Err(SqlStorageError {
+    Err(SqlStorageError {
         message: format!("Entity {} not found", entity_id.to_string()),
         inner_type_name: "?".to_string(), // TODO:
-    });
+    })
 }
 
 pub fn insert_entity_to_sqlite(
@@ -75,7 +75,7 @@ pub fn insert_entity_to_sqlite(
     statement.bind((":id", entity_id.to_string().as_str()))?;
     statement.bind((":content", entity.to_string().as_str()))?;
     statement.next()?;
-    return Ok(entity_id);
+    Ok(entity_id)
 }
 
 pub fn update_entity_in_sqlite(
@@ -89,7 +89,7 @@ pub fn update_entity_in_sqlite(
     statement.bind((":id", entity_id.to_string().as_str()))?;
     statement.bind((":content", entity.to_string().as_str()))?;
     statement.next()?;
-    return Ok(());
+    Ok(())
 }
 
 pub fn delete_entity_from_sqlite(entity_id: &Ulid, db_config: &DbConfig) -> DocDbResult<()> {
@@ -98,15 +98,15 @@ pub fn delete_entity_from_sqlite(entity_id: &Ulid, db_config: &DbConfig) -> DocD
     let mut statement = connection.prepare("DELETE FROM entities WHERE id=:id")?;
     statement.bind((":id", entity_id.to_string().as_str()))?;
     statement.next()?;
-    return Ok(());
+    Ok(())
 }
 
 pub fn remove_all_entities_from_sqlite(db_config: &DbConfig) -> DocDbResult<()> {
     log::info!("Removing all entities from SQLite");
     let connection = get_sqlite_connection(&db_config.sqlite_db_full_filename)?;
-    let query = format!("DELETE FROM entities");
+    let query = "DELETE FROM entities".to_string();
     connection.execute(query)?;
-    return Ok(());
+    Ok(())
 }
 
 pub fn get_entries_from_sqlite(
@@ -133,5 +133,5 @@ pub fn get_entries_from_sqlite(
         };
         entities.push(entry);
     }
-    return Ok(entities);
+    Ok(entities)
 }

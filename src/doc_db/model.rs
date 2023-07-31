@@ -18,7 +18,7 @@ impl DocDbEntry {
                 inner_type_name: "?".to_string(),
             })?
             .insert(field_name.to_string(), field_value);
-        return Ok(());
+        Ok(())
     }
 
     pub fn has_field(&self, field_name: &str) -> DocDbResult<bool> {
@@ -30,6 +30,6 @@ impl DocDbEntry {
                 inner_type_name: "?".to_string(),
             })?
             .contains_key(field_name);
-        return Ok(result);
+        Ok(result)
     }
 }
