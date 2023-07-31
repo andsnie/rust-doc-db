@@ -76,19 +76,16 @@ fn try_merge_entity_with_existing_version(
     let db_entry_option = get_entry_from_sqlite(entity_id, db_config)?;
     if let Some(db_entry) = db_entry_option {
         merge_entities(&db_entry.entity, &mut merged_entity)?;
-    } else {
-        log::warn!("Unable to obtain entity {} for merging", &entity_id);
     }
     Ok(merged_entity)
 }
 
-fn merge_entities(parent_entity: &Value, new_entity: &mut Value) -> Result<(), DocDbError> {
-    for (key, value) in parent_entity.as_object().ok_or(DocDbError::Internal {
-        message: "Unable to parse parent entity as object".to_string(),
-        inner_type_name: "".to_string(),
-    })? {
-        if new_entity[key].is_null() {
-            new_entity[key] = value.clone();
+fn merge_entities(json_parent_entity: &Value, json_new_entity: &mut Value) -> DocDbResult<()> {
+    if let Some(parent_entity) = json_parent_entity.as_object() {
+        for (key, value) in parent_entity {
+            if json_new_entity[key].is_null() {
+                json_new_entity[key] = value.clone();
+            }
         }
     }
     Ok(())
